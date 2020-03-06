@@ -6,10 +6,32 @@ stages:
   - stage: Signing
     dependsOn: ${{parameters.DependsOn}}
     jobs:
-      - template: pipelines/jobs/sign-package.yml@azure-sdk-build-tools
-        parameters:
-          ArtifactName: ${{parameters.ArtifactName}}
-          Artifacts: ${{parameters.Artifacts}}
+      - deployment: SignPackage
+        environment: esrp
+        timeoutInMinutes: 20
+        pool:
+          vmImage: vs2017-win2016
+
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: none
+
+                - download: current
+                  artifact: ${{parameters.ArtifactName}}
+                  timeoutInMinutes: 5
+
+                - ${{ each artifact in parameters.Artifacts }}:
+                  - pwsh: |
+                      New-Item -Type Directory -Name staging -Path $(Pipeline.Workspace) -Force
+                      Copy-Item $(Pipeline.Workspace)/${{parameters.ArtifactName}}/${{artifact.name}}.[0-9]*.[0-9]*.[0-9]* $(Pipeline.Workspace)/staging
+                      Get-ChildItem $(Pipeline.Workspace)/staging
+                    displayName: Copying ${{artifact.name}} to staging directory
+
+                - template: pipelines/steps/sign-package.yml@azure-sdk-build-tools
+                  parameters:
+                    ArtifactName: ${{parameters.ArtifactName}}
 
   - ${{if and(eq(variables['Build.Reason'], 'Manual'), eq(variables['System.TeamProject'], 'internal'))}}:
     - ${{ each artifact in parameters.Artifacts }}:
@@ -30,7 +52,7 @@ stages:
               runOnce:
                 deploy:
                   steps:
-                    - checkout: none
+                    - checkout: azure-sdk-tools
                     - pwsh: |
                         Get-ChildItem $(Pipeline.Workspace)/${{parameters.ArtifactName}}-signed
                         New-Item -Type Directory -Name ${{artifact.safeName}} -Path $(Pipeline.Workspace)
@@ -40,7 +62,10 @@ stages:
                       timeoutInMinutes: 5
                     - template: eng\pipelines\templates\scripts\create-tags-and-git-release.yml@azure-sdk-tools
                       parameters:
-                        ArtifactSafeName: ${{artifact.safeName}}
+                        ArtifactLocation: $(Pipeline.Workspace)/${{artifact.safeName}}
+                        PackageRepository: Nuget
+                        ReleaseSha: $(Build.SourceVersion)
+                        RepoId: $(Build.Repository.Name)
 
           - ${{if ne(artifact.options.skipPublishPackage, 'true')}}:
             - deployment: PublishPackage
@@ -102,6 +127,7 @@ stages:
               displayName: Publish Docs to GitHub pages
               condition: and(succeeded(), ne(variables['Skip.PublishDocs'], 'true'))
               environment: githubio
+              dependsOn: PublishPackage
 
               pool:
                 vmImage: windows-2019
@@ -138,6 +164,7 @@ stages:
               displayName: "Update Package Version"
               condition: and(succeeded(), ne(variables['Skip.UpdatePackageVersion'], 'true'))
               environment: github
+              dependsOn: PublishPackage
 
               pool:
                 vmImage: windows-2019
