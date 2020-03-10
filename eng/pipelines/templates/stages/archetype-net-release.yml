@@ -29,9 +29,13 @@ stages:
                       Get-ChildItem $(Pipeline.Workspace)/staging
                     displayName: Copying ${{artifact.name}} to staging directory
 
-                - template: pipelines/steps/sign-package.yml@azure-sdk-build-tools
+                - template: pipelines/steps/net-signing.yml@azure-sdk-build-tools
                   parameters:
-                    ArtifactName: ${{parameters.ArtifactName}}
+                    StagingDirectory: $(Pipeline.Workspace)/staging
+
+                - publish: $(Pipeline.Workspace)/staging
+                  artifact: ${{parameters.ArtifactName}}-signed
+                  displayName: 'Store signed packages in ${{parameters.ArtifactName}}-signed artifact'
 
   - ${{if and(eq(variables['Build.Reason'], 'Manual'), eq(variables['System.TeamProject'], 'internal'))}}:
     - ${{ each artifact in parameters.Artifacts }}:
