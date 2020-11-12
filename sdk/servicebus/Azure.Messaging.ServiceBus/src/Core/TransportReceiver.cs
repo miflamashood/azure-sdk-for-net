@@ -146,17 +146,17 @@ namespace Azure.Messaging.ServiceBus.Core
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Moves a message to the deadletter sub-queue.
+        /// Moves a message to the dead-letter subqueue.
         /// </summary>
         ///
-        /// <param name="lockToken">The lock token of the <see cref="ServiceBusReceivedMessage"/> to deadletter.</param>
-        /// <param name="deadLetterReason">The reason for deadlettering the message.</param>
-        /// <param name="deadLetterErrorDescription">The error description for deadlettering the message.</param>
-        /// <param name="propertiesToModify">The properties of the message to modify while moving to sub-queue.</param>
+        /// <param name="lockToken">The lock token of the <see cref="ServiceBusReceivedMessage"/> to dead-letter.</param>
+        /// <param name="deadLetterReason">The reason for dead-lettering the message.</param>
+        /// <param name="deadLetterErrorDescription">The error description for dead-lettering the message.</param>
+        /// <param name="propertiesToModify">The properties of the message to modify while moving to subqueue.</param>
         /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
         ///
         /// <remarks>
-        /// In order to receive a message from the deadletter queue, you will need a new
+        /// In order to receive a message from the dead-letter queue, you will need a new
         /// <see cref="ServiceBusReceiver"/> with the corresponding path.
         /// You can use EntityNameHelper.FormatDeadLetterPath(string)"/> to help with this.
         /// This operation can only be performed on messages that were received by this receiver
@@ -180,7 +180,7 @@ namespace Azure.Messaging.ServiceBus.Core
         /// Throws if the messages have not been deferred.</returns>
         /// <seealso cref="DeferAsync"/>
         public abstract Task<IReadOnlyList<ServiceBusReceivedMessage>> ReceiveDeferredMessagesAsync(
-            IList<long> sequenceNumbers,
+            IReadOnlyList<long> sequenceNumbers,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -209,21 +209,21 @@ namespace Azure.Messaging.ServiceBus.Core
         ///
         /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
         ///
-        /// <returns>The session state as byte array.</returns>
-        public abstract Task<byte[]> GetStateAsync(CancellationToken cancellationToken);
+        /// <returns>The session state as <see cref="BinaryData"/>.</returns>
+        public abstract Task<BinaryData> GetStateAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Set a custom state on the session which can be later retrieved using <see cref="GetStateAsync"/>
         /// </summary>
         ///
-        /// <param name="sessionState">A byte array of session state</param>
+        /// <param name="sessionState">A <see cref="BinaryData"/> of session state</param>
         /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
         ///
         /// <remarks>This state is stored on Service Bus forever unless you set an empty state on it.</remarks>
         ///
         /// <returns>A task to be resolved on when the operation has completed.</returns>
         public abstract Task SetStateAsync(
-            byte[] sessionState,
+            BinaryData sessionState,
             CancellationToken cancellationToken);
     }
 }

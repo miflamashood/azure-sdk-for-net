@@ -1,7 +1,10 @@
 # Release History
 
 ## 1.0.0-preview.5 (Unreleased)
-
+- Supports List/Get Synapse resources through data plane APIs
+- Make `name` as required parameter for `NotebookResource` and `SqlScriptResource`
+- Support Rename operations
+- Suport CICD operations
 
 ## 1.0.0-preview.4 (2020-09-01)
 - Added test cases.

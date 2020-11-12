@@ -78,7 +78,7 @@ namespace Azure.Storage.Files.DataLake.Tests
                 options.AddPolicy(new RecordedClientRequestIdPolicy(Recording, parallelRange), HttpPipelinePosition.PerCall);
             }
 
-            return Recording.InstrumentClientOptions(options);
+            return InstrumentClientOptions(options);
         }
 
         public DataLakeClientOptions GetFaultyDataLakeConnectionOptions(
@@ -434,5 +434,19 @@ namespace Azure.Storage.Files.DataLake.Tests
                 }
             }
         }
-    }
+
+        public string[] PathNames
+        => new[]
+            {
+                "foo",
+                "bar",
+                "baz",
+                "baz/bar",
+                "foo/foo",
+                "foo/bar",
+                "baz/foo",
+                "baz/foo/bar",
+                "baz/bar/foo"
+            };
+        }
 }

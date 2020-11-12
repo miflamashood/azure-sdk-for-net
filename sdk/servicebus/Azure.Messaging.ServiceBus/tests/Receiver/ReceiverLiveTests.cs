@@ -284,7 +284,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Receiver
                         remainingMessages--;
                         messageEnum.MoveNext();
                         Assert.AreEqual(messageEnum.Current.MessageId, item.MessageId);
-                        Assert.AreEqual(messageEnum.Current.Body.ToBytes().ToArray(), item.Body.ToBytes().ToArray());
+                        Assert.AreEqual(messageEnum.Current.Body.ToArray(), item.Body.ToArray());
                         await receiver.DeadLetterMessageAsync(item.LockToken);
                     }
                 }
@@ -354,7 +354,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Receiver
                 for (int i = 0; i < messageList.Count; i++)
                 {
                     Assert.AreEqual(messageList[i].MessageId, deferredMessages[i].MessageId);
-                    Assert.AreEqual(messageList[i].Body.ToBytes().ToArray(), deferredMessages[i].Body.ToBytes().ToArray());
+                    Assert.AreEqual(messageList[i].Body.ToArray(), deferredMessages[i].Body.ToArray());
                 }
 
                 // verify that looking up a non-existent sequence number will throw
@@ -362,6 +362,10 @@ namespace Azure.Messaging.ServiceBus.Tests.Receiver
                 Assert.That(
                     async () => await receiver.ReceiveDeferredMessagesAsync(sequenceNumbers),
                     Throws.InstanceOf<ServiceBusException>().And.Property(nameof(ServiceBusException.Reason)).EqualTo(ServiceBusFailureReason.MessageNotFound));
+
+                // verify that an empty list can be passed
+                deferredMessages = await receiver.ReceiveDeferredMessagesAsync(Array.Empty<long>());
+                Assert.IsEmpty(deferredMessages);
             }
         }
 
@@ -613,6 +617,40 @@ namespace Azure.Messaging.ServiceBus.Tests.Receiver
                 Assert.That(
                     async () => await receiver.DeadLetterMessageAsync(peekedMessage),
                     Throws.InstanceOf<InvalidOperationException>());
+            }
+        }
+
+        /// <summary>
+        /// This test validates that we are not limited to 5k unsettled messages on the link, as we have updated
+        /// the sessionSettings.IncomingWindow value to Int32.MaxValue in AmqpConnectionScope. Without this change, receivers
+        /// would just stop receiving after 5k unsettled messages and would not throw an exception.
+        /// </summary>
+        [Test]
+        public async Task CanHaveManyUnsettledMessages()
+        {
+            await using (var scope = await ServiceBusScope.CreateWithQueue(enablePartitioning: false, enableSession: false))
+            {
+                await using var client = new ServiceBusClient(TestEnvironment.ServiceBusConnectionString);
+                ServiceBusSender sender = client.CreateSender(scope.QueueName);
+
+                int sentCount = 6000;
+                int messagesPerBatch = 1000;
+
+                await sender.SendMessagesAsync(new List<ServiceBusMessage>());
+
+                for (int i = 0; i < sentCount/messagesPerBatch; i++)
+                {
+                    await sender.SendMessagesAsync(GetMessages(messagesPerBatch));
+                }
+
+                var receiver = client.CreateReceiver(scope.QueueName);
+
+                var receivedCount = 0;
+                while (receivedCount <= sentCount)
+                {
+                    var msgs = await receiver.ReceiveMessagesAsync(sentCount);
+                    receivedCount += msgs.Count;
+                }
             }
         }
 

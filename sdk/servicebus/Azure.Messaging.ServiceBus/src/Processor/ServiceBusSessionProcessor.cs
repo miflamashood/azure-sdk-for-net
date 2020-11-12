@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core.Amqp;
@@ -82,9 +83,6 @@ namespace Azure.Messaging.ServiceBus
         /// <inheritdoc cref="ServiceBusProcessor.FullyQualifiedNamespace"/>
         public string FullyQualifiedNamespace => _innerProcessor.FullyQualifiedNamespace;
 
-        /// <inheritdoc cref="ServiceBusProcessor.MaxReceiveWaitTime"/>
-        public TimeSpan? MaxReceiveWaitTime => _innerProcessor.MaxReceiveWaitTime;
-
         internal ServiceBusSessionProcessor(
             ServiceBusConnection connection,
             string entityPath,
@@ -97,7 +95,7 @@ namespace Azure.Messaging.ServiceBus
                 true,
                 plugins,
                 options.ToProcessorOptions(),
-                options.SessionIds,
+                options.SessionIds.ToArray(),
                 options.MaxConcurrentSessions,
                 options.MaxConcurrentCallsPerSession);
         }

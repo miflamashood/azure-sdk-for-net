@@ -1,7 +1,14 @@
 # Release History
 
-## 4.2.0-beta.2 (Unreleased)
+## 4.2.0-beta.3 (Unreleased)
 
+### Added
+
+- Added `DownloadCertificate` and `DownloadCertificateAsync` methods to get `X509Certificate2` with private key if permitted ([#12083](https://github.com/Azure/azure-sdk-for-net/issues/12083))
+
+## 4.2.0-beta.2 (2020-10-06)
+
+- Bug fixes and performance improvements.
 
 ## 4.2.0-beta.1 (2020-09-08)
 
